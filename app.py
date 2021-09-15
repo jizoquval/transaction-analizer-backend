@@ -9,6 +9,10 @@ app = Flask(__name__)
 users = [User(id = "23", result=17), User(id = "12", result=88)]
 cashback = Cashback(persent = 0)
 
+@app.route('/')
+def index():
+  return "<h1>Welcome!</h1>"
+
 @app.route("/user/list")
 def get_users():
     return jsonify(users)
