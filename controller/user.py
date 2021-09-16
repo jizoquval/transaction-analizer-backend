@@ -1,17 +1,16 @@
-from model.user import Result
+from model.user import User
+from model.database import Session
+from model.result import Result
 from model.error import Error
 import csv
-from multiprocessing.dummy import Pool as ThreadPool
+from sqlalchemy import select
 
 
 def get_list():
     users_list = []
-    with open('res/unique_party_rk.csv', newline='') as users:
-        reader = csv.DictReader(users, fieldnames=["party_rk"])
-        pool = ThreadPool(4)
-        users_list = list(pool.map(lambda x: x["party_rk"], reader))
-        pool.close()
-        users_list.pop(0)
+    with Session() as session:
+        statement = select(User)
+        users_list = session.execute(statement).scalars().all()
     return users_list
 
 
