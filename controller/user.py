@@ -1,6 +1,5 @@
 from model.user import Result
 from model.error import Error
-from flask import jsonify
 import csv
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -13,7 +12,7 @@ def get_list():
         users_list = list(pool.map(lambda x: x["party_rk"], reader))
         pool.close()
         users_list.pop(0)
-    return jsonify(users_list)
+    return users_list
 
 
 def get_result_by(user_id):
@@ -40,7 +39,7 @@ def get_result_by(user_id):
         user_result = sorted(
             user_result, key=lambda x: x.predicted_sum, reverse=True
         )
-        return jsonify(user_result)
+        return user_result
     else:
         error = Error(reason="User not found", code=404)
 

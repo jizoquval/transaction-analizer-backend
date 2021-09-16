@@ -1,3 +1,4 @@
+from controller.metrics import metric_business_all_users, metric_business_selected_users
 from model.error import Error
 from flask import Flask, jsonify
 from flask import request
@@ -16,12 +17,12 @@ def index():
 
 @app.route("/user/list")
 def get_users():
-    return user_controller.get_list()
+    return jsonify(user_controller.get_list())
 
 
 @app.route("/user/result/<string:user_id>")
 def get_result_for(user_id):
-    return user_controller.get_result_by(user_id)
+    return jsonify(user_controller.get_result_by(user_id))
 
 
 @app.route("/cashback", methods=['GET', 'POST'])
@@ -49,7 +50,17 @@ def set_cashback_persents():
 def get_metrics():
     args = request.args
     month = args.get("month", None)
+    user_id = args.get("user_id", None)
     if month:
-        return f'get metrics for all users by months {month}'
+        if user_id:
+            # get metrics for user {user_id} by months {month}  
+            users = user_controller.get_list()
+            value = metric_business_selected_users("", cashbacks, list(user_id))
+            return jsonify(value) 
+        else:
+            # get metrics for all users by months {month}
+            value = metric_business_all_users("", cashbacks)
+            return jsonify(value) 
     else:
-        return "get metrics for all users"
+        error = Error("specify arg month", 400)
+        return jsonify(error.reason), error.code
