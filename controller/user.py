@@ -3,7 +3,6 @@ from model.error import Error
 from flask import jsonify
 import csv
 from multiprocessing.dummy import Pool as ThreadPool
-import pandas as pd
 
 
 def get_list():
@@ -41,8 +40,6 @@ def get_result_by(user_id):
         user_result = sorted(
             user_result, key=lambda x: x.predicted_sum, reverse=True
         )
-        cashback = { res.category : 5 for res in user_result }
-        print(cashback)
         return jsonify(user_result)
     else:
         error = Error(reason="User not found", code=404)

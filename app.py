@@ -1,4 +1,3 @@
-from model.cashback import Cashback
 from model.error import Error
 from flask import Flask, jsonify
 from flask import request
