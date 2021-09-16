@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
 @dataclass
-class User:
+class Result:
     id: str
-    result: int
+    predicted_sum: int
+    real_sum: int
+    category: str
+    month: int
