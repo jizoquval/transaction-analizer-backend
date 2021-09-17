@@ -1,17 +1,14 @@
-def metric_business_all_users(data, cashback: dict, users_count: int):
-    user_data = data.copy()
-    for category, percent in cashback.items():
-        user_data.loc[user_data['category'] == category, ['pred_sum', 'real_sum']] = \
-            user_data.loc[user_data['category'] == category, ['pred_sum', 'real_sum']] * percent
+import asyncio
 
-    #     for user in user_data['party_rk'].unique():
-    #         potentional_cashback_all_user_sum += sum(user_data[user_data['party_rk'] == user].nlargest(3,'real_sum')['real_sum'])
-    #         real_cashback_all_user_sum += sum(user_data[user_data['party_rk'] == user].nlargest(3,'pred_sum')['real_sum'])
 
-    potentional_cashback_all_user_sum = int(
-        sum(user_data.groupby('party_rk')['real_sum'].apply(lambda grp: grp.nlargest(3).sum())))
-    real_cashback_all_user_sum = int(
-        sum(user_data.groupby('party_rk').apply(lambda grp: grp.nlargest(3, 'pred_sum')['real_sum'].sum())))
+async def metric_business_all_users(data, cashback: dict, users_count: int):
+    user_data = calculate_cashback(data, cashback)
+
+    potentional_cashback_all_user_sum_task = asyncio.create_task(calculate_potential_cashback(user_data))
+    real_cashback_all_user_sum_task = asyncio.create_task(calculate_real_cashback(user_data))
+
+    potentional_cashback_all_user_sum = await potentional_cashback_all_user_sum_task
+    real_cashback_all_user_sum = await real_cashback_all_user_sum_task
 
     delta = potentional_cashback_all_user_sum - real_cashback_all_user_sum
     average_delta = int(delta / users_count)
@@ -32,7 +29,8 @@ def metric_business_selected_users(data, cashback: dict, users: list):
 
         for category, percent in cashback.items():
             user_data.loc[user_data['category'] == category, ['pred_sum', 'real_sum']] = \
-                user_data.loc[user_data['category'] == category, ['pred_sum', 'real_sum']] * percent
+                user_data.loc[user_data['category'] == category,
+                              ['pred_sum', 'real_sum']] * percent
 
         potentional_cashback = user_data.nlargest(3, 'real_sum')
         real_cashback = user_data.nlargest(3, 'pred_sum')
@@ -44,3 +42,29 @@ def metric_business_selected_users(data, cashback: dict, users: list):
 
     return users_cashback_list
 
+
+def calculate_cashback(data, cashback: dict):
+    user_data = data.copy()
+    for category, percent in cashback.items():
+        user_data.loc[user_data['category'] == category, ['pred_sum', 'real_sum']] = \
+            user_data.loc[user_data['category'] == category,
+                          ['pred_sum', 'real_sum']] * percent
+    return user_data
+
+
+async def calculate_potential_cashback(user_data):
+    return int(
+        sum(
+            user_data.groupby('party_rk')['real_sum'].apply(
+                lambda grp: grp.nlargest(3).sum())
+        )
+    )
+
+
+async def calculate_real_cashback(user_data):
+    return int(
+        sum(
+            user_data.groupby('party_rk').apply(
+                lambda grp: grp.nlargest(3, 'pred_sum')['real_sum'].sum())
+        )
+    )

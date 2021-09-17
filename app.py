@@ -5,16 +5,14 @@ from model.cashback_category import Category
 from model.database import DATABASE_NAME, Session, create_db
 from controller.metrics import metric_business_all_users, metric_business_selected_users
 from model.error import Error
-from flask import Flask, jsonify
-from flask import request
+from quart import Quart, jsonify, request
+from quart_cors import cors, route_cors
 from controller import user as user_controller
 import pandas as pd
 from sqlalchemy import select, update, func
-from flask_cors import CORS, cross_origin
 
-app = Flask(__name__)
-cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
+app = Quart(__name__)
+app = cors(app, allow_origin="*", allow_headers=["Content-Type"], allow_methods=['GET', 'POST'])
 
 if not os.path.exists(DATABASE_NAME):
     create_db()
@@ -22,50 +20,49 @@ if not os.path.exists(DATABASE_NAME):
 
 
 @app.route("/user/list")
-@cross_origin()
-def get_users():
+async def get_users():
     return jsonify(user_controller.get_list())
 
 
 @app.route("/user/result/<string:user_id>")
-@cross_origin()
-def get_result_for(user_id):
+async def get_result_for(user_id):
     return jsonify(user_controller.get_result_by(user_id))
 
 
-@app.route("/cashback", methods=['GET', 'POST'])
-@cross_origin()
-def set_cashback_persents():
+@app.route("/cashback")
+async def get_cashback_persents():
     with Session() as session:
-        if request.method == "POST":
-            args = request.args
-            newValue = args.get("value", None)
-            category = args.get("category", None)
-            if newValue:
-                if category:
-                    session.query(Category).filter(Category.name == category).update(
-                        {Category.cashback: newValue}
-                    )
-                    session.commit()
-                    return f'Set new cashback {newValue} for {category}'
-                else:
-                    session.query(Category).update(
-                        {Category.cashback: newValue}
-                    )
-                    session.commit()
-                    return f'Set new cashback for all categories {newValue}'
+        statement = select(Category)
+        cashback_categories = session.execute(statement).scalars().all()
+        return jsonify(cashback_categories)
+
+
+@app.route("/cashback/set")
+async def set_cashback_persents():
+    with Session() as session:
+        args = request.args
+        newValue = args.get("value", None)
+        category = args.get("category", None)
+        if newValue:
+            if category:
+                session.query(Category).filter(Category.name == category).update(
+                    {Category.cashback: newValue}
+                )
+                session.commit()
+                return {'msg': f'Set new cashback {newValue} for {category}'}
             else:
-                error = Error(reason="missed arg :value", code=400)
-                return jsonify(error.reason), error.code
+                session.query(Category).update(
+                    {Category.cashback: newValue}
+                )
+                session.commit()
+                return {'msg': f'Set new cashback for all categories {newValue}'}
         else:
-            statement = select(Category)
-            cashback_categories = session.execute(statement).scalars().all()
-            return jsonify(cashback_categories)
+            error = Error(reason="missed arg :value", code=400)
+            return jsonify(error.reason), error.code
 
 
 @app.route("/metrics")
-@cross_origin()
-def get_metrics():
+async def get_metrics():
     args = request.args
     month = int(args.get("month", None))
     user_id = args.get("user_id", None)
@@ -89,8 +86,9 @@ def get_metrics():
                 # get metrics for all users by months {month}
                 statement = session.query(func.count(User.party_rk))
                 users_count = session.execute(statement).scalars().one()
-                value = metric_business_all_users(
-                    data, cashback_categories, users_count)
+                value = await metric_business_all_users(
+                    data, cashback_categories, users_count
+                )
                 return jsonify(value)
     else:
         error = Error("specify arg month", 400)
