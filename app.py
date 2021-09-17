@@ -1,3 +1,4 @@
+from model.user import User
 from controller.setup_data import set_inital_data
 import os
 from model.cashback_category import Category
@@ -8,7 +9,7 @@ from flask import Flask, jsonify
 from flask import request
 from controller import user as user_controller
 import pandas as pd
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 
 app = Flask(__name__)
 
@@ -75,7 +76,9 @@ def get_metrics():
                 return jsonify(value)
             else:
                 # get metrics for all users by months {month}
-                value = metric_business_all_users(data, cashback_categories)
+                statement = session.query(func.count(User.party_rk))
+                users_count = session.execute(statement).scalars().one()
+                value = metric_business_all_users(data, cashback_categories, users_count)
                 return jsonify(value)
     else:
         error = Error("specify arg month", 400)

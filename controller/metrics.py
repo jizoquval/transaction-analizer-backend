@@ -1,4 +1,4 @@
-def metric_business_all_users(data, cashback: dict):
+def metric_business_all_users(data, cashback: dict, users_count: int):
     user_data = data.copy()
     for category, percent in cashback.items():
         user_data.loc[user_data['category'] == category, ['pred_sum', 'real_sum']] = \
@@ -14,7 +14,15 @@ def metric_business_all_users(data, cashback: dict):
         sum(user_data.groupby('party_rk').apply(lambda grp: grp.nlargest(3, 'pred_sum')['real_sum'].sum())))
 
     delta = potentional_cashback_all_user_sum - real_cashback_all_user_sum
-    return real_cashback_all_user_sum, potentional_cashback_all_user_sum, delta
+    average_delta = int(delta / users_count)
+    average_real_cashback = int(real_cashback_all_user_sum / users_count)
+    return {
+        'real_cashback_all_user_sum': real_cashback_all_user_sum,
+        'potentional_cashback_all_user_sum': potentional_cashback_all_user_sum,
+        'delta': delta,
+        'average_delta': average_delta,
+        'average_real_cashback': average_real_cashback
+    }
 
 
 def metric_business_selected_users(data, cashback: dict, users: list):
