@@ -67,9 +67,13 @@ def set_cashback_persents():
 @cross_origin()
 def get_metrics():
     args = request.args
-    month = args.get("month", None)
+    month = int(args.get("month", None))
     user_id = args.get("user_id", None)
     if month:
+        if not (month == 1 or month == 2):
+            error = Error("month can be 1 or 2", 400)
+            return jsonify(error.reason), error.code
+
         with Session() as session:
             data = pd.read_csv(f'res/{month}_month.csv')
             statement = select(Category.name, Category.cashback)
@@ -85,7 +89,8 @@ def get_metrics():
                 # get metrics for all users by months {month}
                 statement = session.query(func.count(User.party_rk))
                 users_count = session.execute(statement).scalars().one()
-                value = metric_business_all_users(data, cashback_categories, users_count)
+                value = metric_business_all_users(
+                    data, cashback_categories, users_count)
                 return jsonify(value)
     else:
         error = Error("specify arg month", 400)
