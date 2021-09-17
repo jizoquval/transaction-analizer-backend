@@ -29,38 +29,36 @@ async def get_result_for(user_id):
     return jsonify(user_controller.get_result_by(user_id))
 
 
-@app.route("/cashback", methods=['GET', 'POST'])
-@route_cors(
-    allow_headers=["Content-Type"],
-    allow_methods=["POST", "GET"],
-    allow_origin=["*"],
-)
+@app.route("/cashback")
+async def get_cashback_persents():
+    with Session() as session:
+        statement = select(Category)
+        cashback_categories = session.execute(statement).scalars().all()
+        return jsonify(cashback_categories)
+
+
+@app.route("/cashback/set")
 async def set_cashback_persents():
     with Session() as session:
-        if request.method == "POST":
-            args = request.args
-            newValue = args.get("value", None)
-            category = args.get("category", None)
-            if newValue:
-                if category:
-                    session.query(Category).filter(Category.name == category).update(
-                        {Category.cashback: newValue}
-                    )
-                    session.commit()
-                    return {'msg':f'Set new cashback {newValue} for {category}'}
-                else:
-                    session.query(Category).update(
-                        {Category.cashback: newValue}
-                    )
-                    session.commit()
-                    return {'msg': f'Set new cashback for all categories {newValue}'}
+        args = request.args
+        newValue = args.get("value", None)
+        category = args.get("category", None)
+        if newValue:
+            if category:
+                session.query(Category).filter(Category.name == category).update(
+                    {Category.cashback: newValue}
+                )
+                session.commit()
+                return {'msg': f'Set new cashback {newValue} for {category}'}
             else:
-                error = Error(reason="missed arg :value", code=400)
-                return jsonify(error.reason), error.code
+                session.query(Category).update(
+                    {Category.cashback: newValue}
+                )
+                session.commit()
+                return {'msg': f'Set new cashback for all categories {newValue}'}
         else:
-            statement = select(Category)
-            cashback_categories = session.execute(statement).scalars().all()
-            return jsonify(cashback_categories)
+            error = Error(reason="missed arg :value", code=400)
+            return jsonify(error.reason), error.code
 
 
 @app.route("/metrics")
