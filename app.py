@@ -42,13 +42,13 @@ async def set_cashback_persents():
                         {Category.cashback: newValue}
                     )
                     session.commit()
-                    return f'Set new cashback {newValue} for {category}'
+                    return {'msg':f'Set new cashback {newValue} for {category}'}
                 else:
                     session.query(Category).update(
                         {Category.cashback: newValue}
                     )
                     session.commit()
-                    return f'Set new cashback for all categories {newValue}'
+                    return {'msg': f'Set new cashback for all categories {newValue}'}
             else:
                 error = Error(reason="missed arg :value", code=400)
                 return jsonify(error.reason), error.code
