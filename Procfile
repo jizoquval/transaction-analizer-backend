@@ -1,1 +1,1 @@
-web: gunicorn wsgi:app --timeout 180
+web: gunicorn -k uvicorn.workers.UvicornWorker wsgi:app --timeout 180

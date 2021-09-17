@@ -7,12 +7,14 @@ verify_ssl = true
 autopep8 = "*"
 
 [packages]
-flask = "2.0.1"
 dataclasses = "0.6"
 gunicorn = "20.1.0"
 sqlalchemy = "*"
 pandas = "*"
-flask-cors = "*"
+quart = "*"
+quart-cors = "*"
+install = "*"
+uvicorn = "*"
 
 [requires]
 python_version = "3.8"
