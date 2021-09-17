@@ -6,7 +6,7 @@ from model.database import DATABASE_NAME, Session, create_db
 from controller.metrics import metric_business_all_users, metric_business_selected_users
 from model.error import Error
 from quart import Quart, jsonify, request
-from quart_cors import cors
+from quart_cors import cors, route_cors
 from controller import user as user_controller
 import pandas as pd
 from sqlalchemy import select, update, func
@@ -30,6 +30,11 @@ async def get_result_for(user_id):
 
 
 @app.route("/cashback", methods=['GET', 'POST'])
+@route_cors(
+    allow_headers=["Content-Type"],
+    allow_methods=["POST", "GET"],
+    allow_origin=["*"],
+)
 async def set_cashback_persents():
     with Session() as session:
         if request.method == "POST":
