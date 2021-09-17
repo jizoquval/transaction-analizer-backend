@@ -12,6 +12,7 @@ dataclasses = "0.6"
 gunicorn = "20.1.0"
 sqlalchemy = "*"
 pandas = "*"
+flask-cors = "*"
 
 [requires]
 python_version = "3.8"

@@ -10,8 +10,11 @@ from flask import request
 from controller import user as user_controller
 import pandas as pd
 from sqlalchemy import select, update, func
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 if not os.path.exists(DATABASE_NAME):
     create_db()
@@ -19,16 +22,19 @@ if not os.path.exists(DATABASE_NAME):
 
 
 @app.route("/user/list")
+@cross_origin()
 def get_users():
     return jsonify(user_controller.get_list())
 
 
 @app.route("/user/result/<string:user_id>")
+@cross_origin()
 def get_result_for(user_id):
     return jsonify(user_controller.get_result_by(user_id))
 
 
 @app.route("/cashback", methods=['GET', 'POST'])
+@cross_origin()
 def set_cashback_persents():
     with Session() as session:
         if request.method == "POST":
@@ -58,6 +64,7 @@ def set_cashback_persents():
 
 
 @app.route("/metrics")
+@cross_origin()
 def get_metrics():
     args = request.args
     month = args.get("month", None)
