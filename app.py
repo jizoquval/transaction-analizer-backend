@@ -12,7 +12,7 @@ import pandas as pd
 from sqlalchemy import select, update, func
 
 app = Quart(__name__)
-app = cors(app, allow_origin="*", allow_headers=["Content-Type"])
+app = cors(app, allow_origin="*", allow_headers=["Content-Type"], allow_methods=['GET', 'POST'])
 
 if not os.path.exists(DATABASE_NAME):
     create_db()
