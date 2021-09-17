@@ -3,7 +3,7 @@ from controller.setup_data import set_inital_data
 import os
 from model.cashback_category import Category
 from model.database import DATABASE_NAME, Session, create_db
-from controller.metrics import metric_business_all_users, metric_business_selected_users
+from controller.metrics import check_same_cashback_persent, metric_business_all_users, metric_business_all_users_aproximate, metric_business_selected_users
 from model.error import Error
 from quart import Quart, jsonify, request
 from quart_cors import cors, route_cors
@@ -12,7 +12,8 @@ import pandas as pd
 from sqlalchemy import select, update, func
 
 app = Quart(__name__)
-app = cors(app, allow_origin="*", allow_headers=["Content-Type"], allow_methods=['GET', 'POST'])
+app = cors(app, allow_origin="*",
+           allow_headers=["Content-Type"], allow_methods=['GET', 'POST'])
 
 if not os.path.exists(DATABASE_NAME):
     create_db()
@@ -90,6 +91,28 @@ async def get_metrics():
                     data, cashback_categories, users_count
                 )
                 return jsonify(value)
+    else:
+        error = Error("specify arg month", 400)
+        return jsonify(error.reason), error.code
+
+
+@app.route("/metrics_average")
+async def get_average_metrics():
+    args = request.args
+    month = int(args.get("month", None))
+    users_count = int(args.get("users_count", 4000))
+
+    if month:
+        if not (month == 1 or month == 2):
+            error = Error("month can be 1 or 2", 400)
+            return jsonify(error.reason), error.code
+        with Session() as session:
+            data = pd.read_csv(f'res/{month}_month.csv')
+            users = pd.read_csv(f'res/unique_party_rk.csv')
+            statement = select(Category.name, Category.cashback)
+            cashback_categories = dict(session.execute(statement).all())
+
+            return metric_business_all_users_aproximate(data, users, cashback_categories, users_count)
     else:
         error = Error("specify arg month", 400)
         return jsonify(error.reason), error.code
